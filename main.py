@@ -4,36 +4,39 @@ from My_Models import Use_model
 
 
 async def worker(my_model):
-    """Worker loop that continuously processes the queue."""
+    """Цикл для обработки значений моделью в свободное время"""
     while True:
         if not my_model.queue.empty():
-            await my_model.update()  # Process one item
-        await asyncio.sleep(0.1)  # Avoid busy-waiting
+            await my_model.update()  # Обработка одного значения в очереди
+        await asyncio.sleep(0.1)  # Выход из очереди (?) | TODO 1
 
 
 
 async def main():
-    # Initialize the model
+    # Выбор модели для работы
     my_model = Use_model(ver="V1")
 
-    # Start the worker loop
+    # Запуск worker для подсчёта моделью текстов в очереди
     worker_task = asyncio.create_task(worker(my_model))
 
-    # Store unique IDs for reference
+    # Хранение всех уникальных ID
     unique_ids = {}
 
     print("Ready for input commands.")
     print('Commands:',
           '\n - "R" to read a text and add to the queue.',
           '\n - "W" to write summary by unique ID.',
-          '\n - Press Enter to continue processing.')
+          '\n - Press Enter to continue processing.',
+          '\n - "EXIT" for exit the program')
 
     while True:
-        # Wait for user input
+
+        # Выбор режима работы
         user_input = input("Enter command: ").strip()
 
         if user_input.upper() == "R":
-            # Add text to the queue
+            # Добавление текста для обработки в очередь (связный список)
+
             text = input("Enter text to add to queue: ").strip()
             if text:
                 unique_id = await my_model.add_to_queue(text)
@@ -44,7 +47,8 @@ async def main():
 
 
         elif user_input.upper() == "W":
-            # Write the summary for a given unique ID
+            # Вывод результата сокращения с ID через хэш-таблицу (словарь)
+
             unique_id = input("Enter unique ID to retrieve summary: ").strip()
             found_status, found_summary = await my_model.find_summary_by_id(unique_id)
             if found_status:
@@ -54,11 +58,14 @@ async def main():
 
 
         elif user_input == "":
-            # Continue processing the queue
-            print("Processing queue... Press Ctrl+C to stop.")
-            await asyncio.sleep(0.1)  # Allow the worker to process items
+            # Подсчёт моделью текстов в очереди
 
-        elif user_input.upper() == "EXIT":
+            print("Processing queue... Press Ctrl+C to stop.")
+            await asyncio.sleep(0.1)  # Позволяет worker обработать один запрос                                         # TODO: 1) Добавить прерывание процесса не через Ctrl+C
+
+        elif user_input.upper() == "EXIT":                                                                              # TODO: 3) Настроить выход
+            # Выход из цикла с очисткой памяти
+
             print("Exiting program")
             await worker_task
             break
@@ -67,10 +74,10 @@ async def main():
         else:
             print("Invalid command. Try again.")
 
-    # Cancel the worker when exiting
+    # Закончить работу worker_task
     worker_task.cancel()
 
 
-# Run the async main function
+
 if __name__ == "__main__":
     asyncio.run(main())

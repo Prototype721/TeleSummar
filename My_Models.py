@@ -2,23 +2,37 @@ import asyncio
 import hashlib
 from transformers import BartTokenizer, BartForConditionalGeneration
 
+
 MAX_LENGTH_SUM = 40
 MIN_LENGTH_SUM = 5
+
+
+
+#--------------------------------------Модели для сокращения текста--------------------------------------------
+# Для корректной работы необходимо наличие immediately_summary(входной текст) -> выходное сокращение
+
 
 class ModelV1:
     def __init__(self):
         self._tokenizer = BartTokenizer.from_pretrained("./my_bart_model")
         self._model = BartForConditionalGeneration.from_pretrained("./my_bart_model")
-        self.set_length()
+        self._max_length = MAX_LENGTH_SUM
+        self._min_length = MIN_LENGTH_SUM
 
-    def set_length(self, max_length=MAX_LENGTH_SUM, min_length=MIN_LENGTH_SUM):
+
+    def set_length(self, max_length:int=MAX_LENGTH_SUM, min_length:int=MIN_LENGTH_SUM):
         self._max_length = max_length
         self._min_length = min_length
+        return None
 
-    def set_data(self, **kwargs): # for adding other data
+    # Для добавления новых параметров в будущем
+    """
+    def set_data(self, **kwargs):
         pass
+        return None
+    """
 
-    async def immediately_summary(self, input_text):
+    async def immediately_summary(self, input_text:str) -> str:
         inputs = self._tokenizer([input_text], return_tensors="pt")
 
         summary_ids = self._model.generate(
@@ -34,6 +48,8 @@ class ModelV1:
         return summary
 
 
+# Создание уникальных id на основе входящего текста
+# Нужда для реализации Хэш-таблицы (словаря с уникальными ключами для каждого значения)
 def generate_unique_id(input_string):
     encoded_input = input_string.encode()
     sha256_hash = hashlib.sha256()
@@ -41,37 +57,55 @@ def generate_unique_id(input_string):
     return sha256_hash.hexdigest()
 
 
+
+
+#----------------------------------------------------------------------------------------------------------
+
+
+
+# Функция для выбора модели.
+# Добавляет в выбранный класс необходимы функции для работы с очередью
 def Use_model(ver=None):
+    # Можно добавить новые версии для других моделей
+
     if ver == "V1":
-        Parent = ModelV1
+        Parent = ModelV1    # Родитель, которому будут добавлены функции
     else:
         raise ValueError("Unexpected model")
+
 
     class Model(Parent):
         def __init__(self):
             super().__init__()
-            self.queue = asyncio.Queue()
-            self.summaries = {}  # Dictionary to store summaries by unique ID
+            self.queue = asyncio.Queue()    # Связный список для работы с запросами обработки
+            self.summaries = {}             # Словарь/хеш-таблица для хранения результатов обработки
 
-        async def update(self):  # Create summary of data
+        async def update(self):  #
+            # функция обработки одного запроса из очереди
+
             try:
-                unique_id, data = await self.queue.get() # deletes data after requesting
-                summary = await self.immediately_summary(input_text=data)
-                self.summaries[unique_id] = summary  # Store summary in dictionary
+                unique_id, data = await self.queue.get()    # Взятие значений с удалением в очереди                     # TODO: 2) Добавить защиту от прерывания, чтобы знаечния удалялись только после обработки
+                summary = await self.immediately_summary(input_text=data)   # Обработка текста нейросетью
+                self.summaries[unique_id] = summary     # Сохранение результата в словаре с обработанными значениями
             except Exception as e:
                 print(f"Error during update: {e}")
 
 
-        async def add_to_queue(self, data=None):
+        async def add_to_queue(self, data:str="Empty") -> str:
+            # Добавление текста в связный список запросов с генерацией уникального ID для каждого текста
+
             unique_id = generate_unique_id(data)
             await self.queue.put((unique_id, data))
             return unique_id
 
 
-        async def find_summary_by_id(self, unique_id):
+        async def find_summary_by_id(self, unique_id:str) -> (bool, str):
+            # Поиск результата в словаре обработанных значений
+
             summary = self.summaries.get(unique_id)
             if summary:
                 return True, summary
-            return False, None
+            return False, "Empty"          # не нашли
 
-    return Model()
+
+    return Model()     # Возвращаем "обёрнутую" модель для работы

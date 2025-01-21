@@ -187,7 +187,7 @@ def Use_model(ver = None):
 """
 
 #---------------------------------for file reading-----------------------------------
-#
-# import aiofiles
-#     async with aiofiles.open("inputs.txt", "r", encoding="UTF8") as file:
-#     texts = await file.readlines()
+
+import aiofiles
+    async with aiofiles.open("inputs.txt", "r", encoding="UTF8") as file:
+    texts = await file.readlines()
