@@ -12,6 +12,8 @@ MIN_LENGTH_SUM = 5
 # Для корректной работы необходимо наличие immediately_summary(входной текст) -> выходное сокращение
 
 
+# add some new models
+
 class ModelV1:
     def __init__(self):
         self._tokenizer = BartTokenizer.from_pretrained("./my_bart_model")
