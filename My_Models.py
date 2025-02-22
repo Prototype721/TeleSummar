@@ -50,6 +50,19 @@ class ModelV1:
         return summary
 
 
+class MovelV2:
+    def __init__(self):
+        pass
+    
+    
+    async def immediately_summary(self, input_text:str) -> str:
+        pass
+        return input_text
+    # TODO Add workflow
+
+
+
+
 # Создание уникальных id на основе входящего текста
 # Нужда для реализации Хэш-таблицы (словаря с уникальными ключами для каждого значения)
 def generate_unique_id(input_string):
@@ -72,6 +85,8 @@ def Use_model(ver=None):
 
     if ver == "V1":
         Parent = ModelV1    # Родитель, которому будут добавлены функции
+    elif ver == "V2":
+        Parent = MovelV2
     else:
         raise ValueError("Unexpected model")
 
