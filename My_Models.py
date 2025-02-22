@@ -53,8 +53,15 @@ class ModelV1:
 class MovelV2:
     def __init__(self):
         pass
-
+    
+    
+    async def immediately_summary(self, input_text:str) -> str:
+        pass
+        return input_text
     # TODO Add workflow
+
+
+
 
 # Создание уникальных id на основе входящего текста
 # Нужда для реализации Хэш-таблицы (словаря с уникальными ключами для каждого значения)
